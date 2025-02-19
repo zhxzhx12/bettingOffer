@@ -7,6 +7,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.betting.session.SessionHandler;
+import com.betting.session.SessionManager;
+import com.betting.stake.HighStakesHandler;
+import com.betting.stake.StakeHandler;
+import com.betting.stake.StakeStore;
 import com.sun.net.httpserver.HttpServer;
 
 public class Application {
@@ -48,11 +52,11 @@ public class Application {
 
             } else if (pathString.matches("/\\d+/stake") && method.equals("POST")) {
                 System.out.println("handler for create stake!");
-                exchange.sendResponseHeaders(200, 0);
+                new StakeHandler(SessionManager.getInstance(), new StakeStore()).handle(exchange);
 
             } else if (pathString.matches("/\\d+/hightstakes") && method.equals("GET")) {
                 System.out.println("handler for get hight stake!");
-                exchange.sendResponseHeaders(200, 0);
+                new HighStakesHandler(new StakeStore()).handle(exchange);
 
             } else {
                 System.out.println("Not found!");

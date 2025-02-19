@@ -50,7 +50,8 @@ public class SessionManager {
             return false;
 
         Session session = customerToSession.get(customerId);
-        return session != null && !session.isExpired();
+
+        return session != null && !session.isExpired() && session.getKey().equals(sessionKey);
     }
 
     public int getCustomerIdBySession(String sessionKey) {

@@ -5,8 +5,8 @@ import java.util.concurrent.TimeUnit;
 import com.betting.Application;
 
 public class Session {
-    final String key;
-    final long expirationTime;
+    private final String key;
+    private final long expirationTime;
 
     Session(String key) {
         this.key = key;
@@ -16,4 +16,10 @@ public class Session {
     boolean isExpired() {
         return System.currentTimeMillis() > expirationTime;
     }
+
+    public String getKey() {
+        return key;
+    }
+
+    
 }
