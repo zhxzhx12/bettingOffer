@@ -6,19 +6,25 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.betting.session.SessionHandler;
 import com.sun.net.httpserver.HttpServer;
 
 public class Application {
 
     public static final int SERVER_PORT = 8001;
 
+    public static int SESSION_TIMEOUT_MINUTES = 10;//default value 
+
     public static void main(String[] args) throws IOException {
-        //vritual thread pool for performance
+        
+        parseArguments(args);
+
+        // vritual thread pool for performance
         ExecutorService threadPool = Executors.newVirtualThreadPerTaskExecutor();
 
         HttpServer server = HttpServer.create(new InetSocketAddress(SERVER_PORT), 0);
 
-        //hand context
+        // hand context
         createContext(server);
 
         server.setExecutor(threadPool);
@@ -38,7 +44,7 @@ public class Application {
 
             if (pathString.matches("/\\d+/session") && method.equals("GET")) {
                 System.out.println("handler for get session!");
-                exchange.sendResponseHeaders(200, 0);
+                 new SessionHandler().handle(exchange);
 
             } else if (pathString.matches("/\\d+/stake") && method.equals("POST")) {
                 System.out.println("handler for create stake!");
@@ -56,23 +62,36 @@ public class Application {
         });
     }
 
-    
-
     /**
-     * shutdown server and thread pool gracefully 
+     * shutdown server and thread pool gracefully
+     * 
      * @param server
      * @param threadPool
      */
     private static void shutdownServerAndThreadPool(HttpServer server, ExecutorService threadPool) {
         System.out.println("Shutting down server...");
-        server.stop(10); 
+        server.stop(10);
         try {
-            if (!threadPool.awaitTermination(60, TimeUnit.SECONDS)) {
-                threadPool.shutdownNow(); 
+            if (!threadPool.awaitTermination(10, TimeUnit.SECONDS)) {
+                threadPool.shutdownNow();
             }
         } catch (InterruptedException e) {
             threadPool.shutdownNow();
         }
         System.out.println("Server and thread pool shut down.");
+    }
+
+    private static void parseArguments(String[] args) {
+        String sessionTimeoutStr = System.getProperty("SESSION_TIMEOUT_MINUTES");
+
+        if (sessionTimeoutStr != null) {
+            try {
+                SESSION_TIMEOUT_MINUTES = Integer.parseInt(sessionTimeoutStr);
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid argument for SESSION_TIMEOUT_MINUTES: " + sessionTimeoutStr);
+                System.exit(1);
+            }
+        }
+
     }
 }
