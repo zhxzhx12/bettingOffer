@@ -37,7 +37,7 @@ public class SessionManager {
                 sessionToCustomer.put(newKey, customerId);
                 return new Session(newKey);
             }
-            sessionKey.set(v.key);
+            sessionKey.set(v.getKey());
             return v;
         });
 
@@ -55,7 +55,7 @@ public class SessionManager {
     }
 
     public int getCustomerIdBySession(String sessionKey) {
-        Integer customerId = SessionManager.getInstance().sessionToCustomer.get(sessionKey);
+        Integer customerId = sessionToCustomer.get(sessionKey);
         return customerId != null ? customerId : -1;
     }
 
@@ -67,7 +67,7 @@ public class SessionManager {
         // Remove expired sessions from both maps
         customerToSession.entrySet().removeIf(entry -> {
             if (entry.getValue().isExpired()) {
-                sessionToCustomer.remove(entry.getValue().key);
+                sessionToCustomer.remove(entry.getValue().getKey());
                 return true;
             }
             return false;
