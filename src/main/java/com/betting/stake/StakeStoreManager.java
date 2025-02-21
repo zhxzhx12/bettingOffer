@@ -6,12 +6,22 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.betting.session.SessionManager;
 
-public class StakeStore {
+public class StakeStoreManager {
     // Map<BetOfferId, Map<CustomerId, MaxStake>>
     private final ConcurrentHashMap<Integer, ConcurrentHashMap<Integer, Integer>> highStakes = new ConcurrentHashMap<>();
 
     // Map<BetOfferId, List<"customerId:Stake">>, just for keep track of all stakes
     private final ConcurrentHashMap<Integer, CopyOnWriteArrayList<String>> betOfferToStakes = new ConcurrentHashMap<>();
+
+    // Singleton pattern
+    private static StakeStoreManager instance = new StakeStoreManager();
+
+    private StakeStoreManager() {
+    }
+
+    public static StakeStoreManager getInstance() {
+        return instance;
+    }
 
     public void recordStake(int betOfferId, String sessionKey, int stake) {
 

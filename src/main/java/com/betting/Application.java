@@ -4,13 +4,15 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.betting.session.SessionHandler;
 import com.betting.session.SessionManager;
 import com.betting.stake.HighStakesHandler;
 import com.betting.stake.StakeHandler;
-import com.betting.stake.StakeStore;
+import com.betting.stake.StakeStoreManager;
 import com.sun.net.httpserver.HttpServer;
 
 public class Application {
@@ -19,7 +21,13 @@ public class Application {
 
     public static int SESSION_TIMEOUT_MINUTES = 10;//default value 
 
+    public static final AtomicBoolean systemOverloaded = new AtomicBoolean(false);
+
     public static void main(String[] args) throws IOException {
+
+        //init the system monitor for the purpose of Rate Limiting
+        ScheduledExecutorService monitorExecutor = Executors.newSingleThreadScheduledExecutor();
+        monitorExecutor.scheduleAtFixedRate(new SystemMonitor(), 0, 5, TimeUnit.SECONDS);
         
         parseArguments(args);
 
@@ -43,6 +51,15 @@ public class Application {
 
     private static void createContext(HttpServer server) {
         server.createContext("/", exchange -> {
+
+            if (systemOverloaded.get()) {// system overloaded. limite access
+                String response = "Please try later!";
+                exchange.sendResponseHeaders(503, response.getBytes().length);//503 busy
+                exchange.getResponseBody().write(response.getBytes());
+                exchange.close();
+                return;
+            }
+            
             String pathString = exchange.getRequestURI().getPath();
             String method = exchange.getRequestMethod();
 
@@ -52,11 +69,11 @@ public class Application {
 
             } else if (pathString.matches("/\\d+/stake") && method.equals("POST")) {
                 System.out.println("handler for create stake!");
-                new StakeHandler(SessionManager.getInstance(), new StakeStore()).handle(exchange);
+                new StakeHandler(SessionManager.getInstance(), StakeStoreManager.getInstance()).handle(exchange);
 
-            } else if (pathString.matches("/\\d+/hightstakes") && method.equals("GET")) {
+            } else if (pathString.matches("/\\d+/highstakes") && method.equals("GET")) {
                 System.out.println("handler for get hight stake!");
-                new HighStakesHandler(new StakeStore()).handle(exchange);
+                new HighStakesHandler(StakeStoreManager.getInstance()).handle(exchange);
 
             } else {
                 System.out.println("Not found!");

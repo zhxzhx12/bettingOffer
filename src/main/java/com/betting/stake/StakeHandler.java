@@ -11,9 +11,9 @@ import com.sun.net.httpserver.HttpHandler;
 public class StakeHandler implements HttpHandler{
     
     private final SessionManager sessionManager;
-    private final StakeStore stakeStore;
+    private final StakeStoreManager stakeStore;
     
-    public StakeHandler(SessionManager sessionManager, StakeStore stakeStore) {
+    public StakeHandler(SessionManager sessionManager, StakeStoreManager stakeStore) {
         this.sessionManager = Objects.requireNonNull(sessionManager);
         this.stakeStore = Objects.requireNonNull(stakeStore);
     }
