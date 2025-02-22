@@ -8,14 +8,20 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.betting.session.SessionHandler;
 import com.betting.session.SessionManager;
 import com.betting.stake.HighStakesHandler;
 import com.betting.stake.StakeHandler;
-import com.betting.stake.StakeStoreManager;
+import com.betting.stake.StakeManager;
+import com.betting.systemmanager.SystemMonitor;
 import com.sun.net.httpserver.HttpServer;
 
 public class Application {
+
+    private static Logger logger = LoggerFactory.getLogger(Application.class);
 
     public static final int SERVER_PORT = 8001;
 
@@ -23,11 +29,13 @@ public class Application {
 
     public static final AtomicBoolean systemOverloaded = new AtomicBoolean(false);
 
+
+
     public static void main(String[] args) throws IOException {
 
         //init the system monitor for the purpose of Rate Limiting
-        ScheduledExecutorService monitorExecutor = Executors.newSingleThreadScheduledExecutor();
-        monitorExecutor.scheduleAtFixedRate(new SystemMonitor(), 0, 5, TimeUnit.SECONDS);
+        ScheduledExecutorService monitorExecutor = Executors.newSingleThreadScheduledExecutor(Thread.ofVirtual().factory());
+        monitorExecutor.scheduleAtFixedRate(new SystemMonitor(), 0, 2, TimeUnit.SECONDS);
         
         parseArguments(args);
 
@@ -41,7 +49,8 @@ public class Application {
 
         server.setExecutor(threadPool);
         server.start();
-        System.out.println("Server started at port " + SERVER_PORT);
+
+        logger.info("Server started at port {}", SERVER_PORT);
 
         // graceful shutdown
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -53,6 +62,7 @@ public class Application {
         server.createContext("/", exchange -> {
 
             if (systemOverloaded.get()) {// system overloaded. limite access
+                logger.warn("System overloaded, please try later!");
                 String response = "Please try later!";
                 exchange.sendResponseHeaders(503, response.getBytes().length);//503 busy
                 exchange.getResponseBody().write(response.getBytes());
@@ -64,19 +74,19 @@ public class Application {
             String method = exchange.getRequestMethod();
 
             if (pathString.matches("/\\d+/session") && method.equals("GET")) {
-                System.out.println("handler for get session!");
+                logger.info("handler for get session!");
                  new SessionHandler().handle(exchange);
 
             } else if (pathString.matches("/\\d+/stake") && method.equals("POST")) {
-                System.out.println("handler for create stake!");
-                new StakeHandler(SessionManager.getInstance(), StakeStoreManager.getInstance()).handle(exchange);
+                logger.info("handler for create stake!");
+                new StakeHandler(SessionManager.getInstance(), StakeManager.getInstance()).handle(exchange);
 
             } else if (pathString.matches("/\\d+/highstakes") && method.equals("GET")) {
-                System.out.println("handler for get hight stake!");
-                new HighStakesHandler(StakeStoreManager.getInstance()).handle(exchange);
+                logger.info("handler for get hight stake!");
+                new HighStakesHandler(StakeManager.getInstance()).handle(exchange);
 
             } else {
-                System.out.println("Not found!");
+                logger.error("{} {} not found!", method, pathString);
                 exchange.sendResponseHeaders(404, 0); // not found
             }
             exchange.close();
@@ -90,7 +100,7 @@ public class Application {
      * @param threadPool
      */
     private static void shutdownServerAndThreadPool(HttpServer server, ExecutorService threadPool) {
-        System.out.println("Shutting down server...");
+        logger.info("Shutting down server...");
         server.stop(10);
         try {
             if (!threadPool.awaitTermination(10, TimeUnit.SECONDS)) {
@@ -99,7 +109,7 @@ public class Application {
         } catch (InterruptedException e) {
             threadPool.shutdownNow();
         }
-        System.out.println("Server and thread pool shut down.");
+        logger.info("Server and thread pool shut down.");
     }
 
     private static void parseArguments(String[] args) {

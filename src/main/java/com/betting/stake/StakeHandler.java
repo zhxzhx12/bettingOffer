@@ -11,9 +11,9 @@ import com.sun.net.httpserver.HttpHandler;
 public class StakeHandler implements HttpHandler{
     
     private final SessionManager sessionManager;
-    private final StakeStoreManager stakeStore;
+    private final StakeManager stakeStore;
     
-    public StakeHandler(SessionManager sessionManager, StakeStoreManager stakeStore) {
+    public StakeHandler(SessionManager sessionManager, StakeManager stakeStore) {
         this.sessionManager = Objects.requireNonNull(sessionManager);
         this.stakeStore = Objects.requireNonNull(stakeStore);
     }
@@ -76,7 +76,8 @@ public class StakeHandler implements HttpHandler{
             }
             
             // Store the stake
-            stakeStore.recordStake(betOfferId, sessionKey, stake);
+            int customerId = this.sessionManager.getCustomerIdBySession(sessionKey);
+            stakeStore.recordStake(betOfferId, customerId, stake);
             
             exchange.sendResponseHeaders(200, 0);
         } catch (Exception e) {

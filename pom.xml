@@ -20,6 +20,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.5.16</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>3.24.2</version>
@@ -37,18 +43,19 @@
             <artifactId>testcontainers</artifactId>
             <version>1.20.5</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+        
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>1.20.5</version>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.cloud.tools</groupId>
-            <artifactId>jib-core</artifactId>
-            <version>0.27.2</version>
         </dependency>
 
     </dependencies>
@@ -72,7 +79,7 @@
                     </to>
                     <container>
                         <jvmFlags>
-                            <jvmFlag>-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m</jvmFlag>
+                            <jvmFlag> -Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m </jvmFlag>
                         </jvmFlags>
                         <user>1000:1000</user>
                     </container>
@@ -80,9 +87,7 @@
             </plugin>
 
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.2.0</version>
+                <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <archive>
                         <manifest>
@@ -94,8 +99,22 @@
                             <Implementation-Vendor>com.betting</Implementation-Vendor>
                         </manifestEntries>
                     </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
+
+
            
         </plugins>
     </build>

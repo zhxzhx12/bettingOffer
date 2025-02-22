@@ -1,7 +1,7 @@
-GET http://localhost:8001/48199/session HTTP/1.1
+GET http://localhost:8001/481990/session HTTP/1.1
 
 ###
-POST http://localhost:8001/979760/stake?sessionkey=2a969dfade0a HTTP/1.1
+POST http://localhost:8001/979760/stake?sessionkey=a281391d3339-0 HTTP/1.1
 
 80
 ###

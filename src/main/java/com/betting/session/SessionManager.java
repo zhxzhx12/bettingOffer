@@ -1,19 +1,14 @@
 package com.betting.session;
 
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class SessionManager {
-    // Customer ID to Session map
-    private final ConcurrentHashMap<Integer, Session> customerToSession = new ConcurrentHashMap<>();
-    // Session key to Customer ID reverse map
-   private final ConcurrentHashMap<String, Integer> sessionToCustomer = new ConcurrentHashMap<>();
     
-    private final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(Thread.ofVirtual().factory());
+
+    private SessionStore sessionStore = SessionStore.getInstance();
 
     // Singleton pattern
     private static final SessionManager instance = new SessionManager();
@@ -28,50 +23,28 @@ public class SessionManager {
     }
 
     public String getOrCreateSession(int customerId) {
-        AtomicReference<String> sessionKey = new AtomicReference<>();// for visibility
+        Session session = sessionStore.getOrCreateSession(customerId);
 
-        customerToSession.compute(customerId, (k, v) -> {
-            if (v == null || v.isExpired()) {
-                String newKey = generateSessionKey();
-                sessionKey.set(newKey);
-                sessionToCustomer.put(newKey, customerId);
-                return new Session(newKey);
-            }
-            sessionKey.set(v.getKey());
-            return v;
-        });
-
-        return sessionKey.get();
+        return session.getKey();
     }
 
     public boolean isValidSession(String sessionKey) {
-        Integer customerId = sessionToCustomer.get(sessionKey);
-        if (customerId == null)
-            return false;
+        Session session = this.sessionStore.getSession(sessionKey);
 
-        Session session = customerToSession.get(customerId);
-
-        return session != null && !session.isExpired() && session.getKey().equals(sessionKey);
+        return session != null && !session.isExpired();
     }
 
     public int getCustomerIdBySession(String sessionKey) {
-        Integer customerId = sessionToCustomer.get(sessionKey);
-        return customerId != null ? customerId : -1;
-    }
-
-    private String generateSessionKey() {
-        return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        Session session = this.sessionStore.getSession(sessionKey);
+        if (session == null) {
+            return -1;
+        }else{
+            return session.getCustomerId();
+        }
     }
 
     private void cleanExpiredSessions() {
-        // Remove expired sessions from both maps
-        customerToSession.entrySet().removeIf(entry -> {
-            if (entry.getValue().isExpired()) {
-                sessionToCustomer.remove(entry.getValue().getKey());
-                return true;
-            }
-            return false;
-        });
+        this.sessionStore.cleanExpiredSessions();
     }
 
 }

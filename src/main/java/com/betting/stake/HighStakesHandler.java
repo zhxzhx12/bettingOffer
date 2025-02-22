@@ -9,9 +9,9 @@ import com.sun.net.httpserver.HttpHandler;
 
 public class HighStakesHandler implements HttpHandler {
 
-    private final StakeStoreManager stakeStore;
+    private final StakeManager stakeStore;
 
-    public HighStakesHandler(StakeStoreManager stakeStore) {
+    public HighStakesHandler(StakeManager stakeStore) {
         this.stakeStore = Objects.requireNonNull(stakeStore);
     }
 
