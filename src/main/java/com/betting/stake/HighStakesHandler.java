@@ -17,6 +17,7 @@ public class HighStakesHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        
         if (!"GET".equals(exchange.getRequestMethod())) {
             exchange.sendResponseHeaders(405, 0);// 405 Method Not Allowed
             exchange.close();

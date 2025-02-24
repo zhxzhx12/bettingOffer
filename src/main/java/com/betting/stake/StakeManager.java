@@ -106,14 +106,17 @@ public class StakeManager {
      * Remove all stakes except top 20
      */
     private void cleanHighStakes() {
+
         highStakes.entrySet().stream().parallel().forEach(entry -> {
+
             int betOfferId = entry.getKey();
             int oriSize = entry.getValue().size();
 
             ConcurrentHashMap<Integer, Integer> stakes = entry.getValue();
             if (stakes.size() > 20) {
                 stakes.entrySet().stream().sorted(Map.Entry.<Integer, Integer>comparingByValue().reversed())
-                        .skip(20).forEach(e -> stakes.remove(e.getKey()));
+                        .skip(20)// required to keep top 20
+                        .forEach(e -> stakes.remove(e.getKey()));
             }
 
             int cleanedSize = stakes.size();

@@ -13,8 +13,8 @@ import com.betting.Application;
  * check system load and set systemOverloaded flag
  */
 public class SystemMonitor implements Runnable {
-    private static final double CPU_THRESHOLD = 1.0; // CPU使用率阈值
-    private static final double MEM_THRESHOLD = 0.9; // 80% 内存使用率阈值
+    private static final double CPU_THRESHOLD = 1.0; 
+    private static final double MEM_THRESHOLD = 0.9; 
 
     private static Logger logger = LoggerFactory.getLogger(SystemMonitor.class);
 

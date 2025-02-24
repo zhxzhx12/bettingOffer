@@ -20,9 +20,9 @@ public class StakeHandler implements HttpHandler{
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+
         if (!"POST".equals(exchange.getRequestMethod())) {
             exchange.sendResponseHeaders(405, 0);// 405 Method Not Allowed
-            exchange.close();
             return;
         }
 
@@ -58,7 +58,6 @@ public class StakeHandler implements HttpHandler{
                 return;
             }
             
-            // Read stake value from request body
             // Read and validate stake value
             InputStream is = exchange.getRequestBody();
             String body = new String(is.readAllBytes());

@@ -93,7 +93,7 @@ public class SessionStore {
     }
 
     /**
-     * Remove some expired sessions from the list o reduce memory consumption
+     * Remove some expired sessions from the list to reduce memory consumption
      * It's a heavy operation and will lock the list
      */
     public void cleanExpiredSessions() {
@@ -103,8 +103,7 @@ public class SessionStore {
                 return;
             }
 
-            // if more than half of the sessions are expired, we clean some of them for
-            // memory consumption.
+            // if more than half of the sessions are expired, we clean some of them .
             // we keep half of sessions.size() "free" session to reduce the cost of resizing the list
             int originalSize = sessions.size();
             int keepFreeCount = sessions.size() / 2;

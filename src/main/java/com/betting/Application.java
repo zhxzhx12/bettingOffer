@@ -29,14 +29,13 @@ public class Application {
 
     public static final AtomicBoolean systemOverloaded = new AtomicBoolean(false);
 
-
-
     public static void main(String[] args) throws IOException {
 
         //init the system monitor for the purpose of Rate Limiting
         ScheduledExecutorService monitorExecutor = Executors.newSingleThreadScheduledExecutor(Thread.ofVirtual().factory());
         monitorExecutor.scheduleAtFixedRate(new SystemMonitor(), 0, 2, TimeUnit.SECONDS);
         
+        //parse arguments which can be set by for example: -DSESSION_TIMEOUT_MINUTES=10
         parseArguments(args);
 
         // vritual thread pool for performance
@@ -59,6 +58,7 @@ public class Application {
     }
 
     private static void createContext(HttpServer server) {
+
         server.createContext("/", exchange -> {
 
             if (systemOverloaded.get()) {// system overloaded. limite access
@@ -70,26 +70,32 @@ public class Application {
                 return;
             }
             
-            String pathString = exchange.getRequestURI().getPath();
-            String method = exchange.getRequestMethod();
-
-            if (pathString.matches("/\\d+/session") && method.equals("GET")) {
-                logger.info("handler for get session!");
-                 new SessionHandler().handle(exchange);
-
-            } else if (pathString.matches("/\\d+/stake") && method.equals("POST")) {
-                logger.info("handler for create stake!");
-                new StakeHandler(SessionManager.getInstance(), StakeManager.getInstance()).handle(exchange);
-
-            } else if (pathString.matches("/\\d+/highstakes") && method.equals("GET")) {
-                logger.info("handler for get hight stake!");
-                new HighStakesHandler(StakeManager.getInstance()).handle(exchange);
-
-            } else {
-                logger.error("{} {} not found!", method, pathString);
-                exchange.sendResponseHeaders(404, 0); // not found
-            }
-            exchange.close();
+            try {
+                
+                String pathString = exchange.getRequestURI().getPath();
+                String method = exchange.getRequestMethod();
+    
+                if (pathString.matches("/\\d+/session") && method.equals("GET")) {
+                    logger.info("handler for get session!");
+                     new SessionHandler().handle(exchange);
+    
+                } else if (pathString.matches("/\\d+/stake") && method.equals("POST")) {
+                    logger.info("handler for create stake!");
+                    new StakeHandler(SessionManager.getInstance(), StakeManager.getInstance()).handle(exchange);
+    
+                } else if (pathString.matches("/\\d+/highstakes") && method.equals("GET")) {
+                    logger.info("handler for get hight stake!");
+                    new HighStakesHandler(StakeManager.getInstance()).handle(exchange);
+    
+                } else {
+                    logger.error("{} {} not found!", method, pathString);
+                    exchange.sendResponseHeaders(404, 0); // not found
+                }
+            } catch (Exception e) {
+                logger.error("Error:", e);
+            }finally{
+                exchange.close();
+            }   
         });
     }
 
@@ -109,9 +115,14 @@ public class Application {
         } catch (InterruptedException e) {
             threadPool.shutdownNow();
         }
+
         logger.info("Server and thread pool shut down.");
     }
 
+    /**
+     * Currently only support SESSION_TIMEOUT_MINUTES, can be extended to support more
+     * @param args
+     */
     private static void parseArguments(String[] args) {
         String sessionTimeoutStr = System.getProperty("SESSION_TIMEOUT_MINUTES");
 
